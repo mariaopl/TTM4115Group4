@@ -15,7 +15,9 @@ class Help:
         self.app.setFont(18)
         self.app.addLabel("group_label", "Enter your group number:")
         self.app.addEntry("group_entry")
-        self.app.addButton("Submit", self.on_group_submit)
+        self.app.addLabel("unit_label", "Enter the unit number:")
+        self.app.addEntry("unit_entry")
+        self.app.addButton("Submit", self.on_submit)
 
         def terminate():
             self.stm.terminate()
@@ -27,10 +29,13 @@ class Help:
 
 
 
-    def on_group_submit(self):
+    def on_submit(self):
         self.group = self.app.getEntry("group_entry")
+        self.lab = self.app.getEntry("lab_entry")
         self.app.removeLabel("group_label")
         self.app.removeEntry("group_entry")
+        self.app.removeLabel("unit_label")
+        self.app.removeEntry("unit_entry")
         self.app.removeButton("Submit")
 
         self.app.addLabel("title", f"What task do you need help with? (Group {self.group})")
