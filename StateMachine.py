@@ -24,7 +24,6 @@ class Help:
             return True
 
         self.queue = []
-        self.group = None
         self.app.setStopFunction(terminate)
 
 
