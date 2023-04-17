@@ -30,7 +30,7 @@ class Help:
 
     def on_submit(self):
         self.group = self.app.getEntry("group_entry")
-        self.lab = self.app.getEntry("lab_entry")
+        self.lab = self.app.getEntry("unit_entry")
         self.app.removeLabel("group_label")
         self.app.removeEntry("group_entry")
         self.app.removeLabel("unit_label")
@@ -50,6 +50,7 @@ class Help:
         self.app.addLabel("title", "You are now in queue for " + str(msg).lower())
         self.app.addButton("Group helped", self.on_help_group)
         self.stm.send('Need help')
+        self.mqtt_client.publish("ttm4115/group" + str(self.group), str(msg).lower())
 
     def on_help_group(self):
         print("Helping group " + self.group)
@@ -74,7 +75,8 @@ class MQTT_Client:
     def __init__(self):
         self.client = mqtt.Client()
         self.client.connect(host)
-        self.client.loop_start()
+        self.client.on_connect = self.on_connect
+        self.client.on_message = self.on_message
 
     def on_connect(self, client, userdata, flags, rc):
         print("Connected with result code " + str(rc))
@@ -140,9 +142,9 @@ driver = Driver()
 driver.add_machine(stm_help)
 driver.start()
 
-client = MQTT_Client()
-help.mqtt = client
-client.stm_driver = driver
-client.start(host, 1883)
+help_client = MQTT_Client()
+help.mqtt_client = help_client.client
+help_client.stm_driver = driver
+help_client.start(host, 1883)
 
 help.app.go()
