@@ -40,27 +40,43 @@ class Help:
         self.app.addLabel("title", f"What task do you need help with? (Group {self.group})")
 
         for i in range(1, 11):
-            self.app.addButton('Task ' + str(i), self.press_button)
-        self.app.addButton("Task", self.press_button)
+            self.app.addButton('Task ' + str(i), self.on_task_button)
+        self.app.addButton("Task", self.on_task_button)
     
-    def press_button(self, msg):
+    def on_task_button(self, msg):
         self.stm.send('Task')
         print(msg)
         self.app.removeAllWidgets()
         self.app.addLabel("title", "You are now in queue for " + str(msg).lower())
-        self.app.addButton("Group helped", self.on_help_group)
-        self.stm.send('Need help')
+        self.app.addButton("Help group", self.on_help_group)
+        self.app.addButton("Abort help", self.on_abort_help)
         self.mqtt_client.publish("ttm4115/group" + str(self.group), str(msg).lower())
+    
 
     def on_help_group(self):
-        print("Helping group " + self.group)
-        self.stm.send('Gets help')
-        for i in range(1, 11):
-            self.app.addButton('Task ' + str(i), self.press_button)
-        self.app.hideButton("Group helped")
-    
+        self.stm.send('Need help')
+        self.mqtt_client.publish("ttm4115/group" + str(self.group), "group " + str(self.group) + " gets help")
+        self.app.removeAllWidgets()
+        self.app.addButton("Group helped", self.on_group_helped)
+
     def on_group_helped(self):
-        print("Group helped")
+        print("Helped group " + self.group)
+        self.stm.send('Gets help')
+        self.mqtt_client.publish("ttm4115/group" + str(self.group), "group " + str(self.group) + " helped")
+        self.app.removeAllWidgets()
+        self.app.addLabel("title", f"What task do you need help with? (Group {self.group})")
+        for i in range(1, 11):
+            self.app.addButton('Task ' + str(i), self.on_task_button)
+    
+    def on_abort_help(self, msg):
+        print("Group " + self.group + " don't need help anymore")
+        self.stm.send('Abort help')
+        self.mqtt_client.publish("ttm4115/", "Group " + str(self.group ) + " aborts help")
+        self.app.removeAllWidgets()
+        self.app.addLabel("title", f"What task do you need help with? (Group {self.group})")
+        for i in range(1, 11):
+            self.app.addButton('Task ' + str(i), self.on_task_button)
+
 
     def enter_queue(self):
         print("Entered queue")
@@ -83,12 +99,10 @@ class MQTT_Client:
     
     def on_message(self, client, userdata, msg):
         print("on_message(): topic: {}".format(msg.topic))
-        try:
-            self.client.publish("group4", msg.payload)
-        except e:
-            print(e)
+        #self.client.publish("ttm4115/group" + str(self.group), msg.payload)
+        print(userdata)
 
-    
+
     def start(self, broker, port):
 
         print("Connecting to {}:{}".format(broker, port))
@@ -97,7 +111,6 @@ class MQTT_Client:
         self.client.subscribe("ttm4115")
 
         try:
-            # line below should not have the () after the function!
             thread = Thread(target=self.client.loop_forever)
             thread.start()
         except KeyboardInterrupt:
@@ -116,24 +129,29 @@ initial = {'source': 'initial',
         'target': 'no_help'}
 
     
-no_help_transition = {'trigger': 'Task',
+t1 = {'trigger': 'Task',
         'source': 'no_help',
         'target': 'need_help'}
 
-need_help_transition = {'trigger': 'Need help',
+t2 = {'trigger': 'Need help',
         'source': 'need_help',
         'target': 'gets_help'}
 
-gets_help_transition = {'trigger': 'Gets help',
+t3 = {'trigger': 'Gets help',
         'source': 'gets_help',
         'target': 'no_help'}
+
+t4 = {'trigger': 'Abort help',
+        'source': 'need_help',
+        'target': 'no_help',
+        'effect': 'exit_queue'}
 
 no_help = {'name': 'no_help'}
 need_help = {'name': 'need_help', 'entry': 'enter_queue'}
 gets_help = {'name': 'gets_help', 'entry': 'exit_queue'}
 
 states = [no_help, need_help, gets_help]
-transitions = [initial, no_help_transition, need_help_transition, gets_help_transition]
+transitions = [initial, t1, t2, t3, t4]
 
 stm_help = Machine(name='help', transitions=transitions, obj=help, states=states)
 help.stm = stm_help
