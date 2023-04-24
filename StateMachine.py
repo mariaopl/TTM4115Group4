@@ -10,8 +10,10 @@ class Help:
     def __init__(self, client: mqtt.Client):
         self.mqtt = client
         self.group = None
+        self.task = None
         self.tasks = [0,1,2,3,4,5,6,7,8,9,10]
         self.app = gui("Ask for help", "400x400")
+        self.app.setBg("gainsboro")
         self.app.setFont(18)
         self.app.addLabel("group_label", "Enter your group number:")
         self.app.addEntry("group_entry")
@@ -27,9 +29,9 @@ class Help:
 
 
     def on_submit(self):
+        self.app.setBg("gainsboro")
         self.group = self.app.getEntry("group_entry")
         self.app.removeLabel("group_label")
-        self.app.removeEntry("group_entry")
         self.app.removeButton("Submit")
 
         self.app.addLabel("title", f"What task do you need help with? (Group {self.group})")
@@ -45,32 +47,42 @@ class Help:
         self.app.addLabel("title", "You are now in queue for " + str(msg).lower())
         self.app.addButton("Help group", self.on_help_group)
         self.app.addButton("Abort help", self.on_abort_help)
-        if(str(msg).lower().__contains__("task")):
-            self.mqtt_client.publish("ttm4115/" + str(self.group), str(msg).lower().replace("task ", "") + ",needHelp")
+        self.task = str(msg).lower().replace("task ", "")
+        if (self.queue[0] == self.group):
+            self.app.setBg("green")
+        elif (self.queue[1] == self.group):
+            self.app.setBg("yellow")
         else:
-            self.mqtt_client.publish("ttm4115/" + str(self.group), "0,needHelp")
+            self.app.setBg("red")
+        if(str(msg).lower().__contains__("task")):
+            self.mqtt_client.publish("ttm4115/" + str(self.group), str(msg).lower().replace("task ", "") + ",question")
+        else:
+            self.mqtt_client.publish("ttm4115/" + str(self.group), "0,question")
     
 
     def on_help_group(self):
+        self.app.setBg("gainsboro")
         self.stm.send('Need help')
-        self.mqtt_client.publish("ttm4115/" + str(self.group), "getsHelp")
+        self.mqtt_client.publish("ttm4115/" + str(self.group), str(self.task) + ",getsHelp")
         self.app.removeAllWidgets()
         self.app.addButton("Group helped", self.on_group_helped)
 
     def on_group_helped(self):
+        self.app.setBg("gainsboro")
         print("Helped group " + self.group)
         self.stm.send('Gets help')
-        self.mqtt_client.publish("ttm4115/" + str(self.group), "groupHelped")
+        self.mqtt_client.publish("ttm4115/" + str(self.group), str(self.task) + ",groupHelped")
         self.app.removeAllWidgets()
         self.app.addLabel("title", f"What task do you need help with? (Group {self.group})")
         for i in range(1, 11):
             self.app.addButton('Task ' + str(i), self.on_task_button)
         self.app.addButton("Other", self.on_task_button)
     
-    def on_abort_help(self, msg):
+    def on_abort_help(self):
+        self.app.setBg("gainsboro")
         print("Group " + self.group + " don't need help anymore")
         self.stm.send('Abort help')
-        self.mqtt_client.publish("ttm4115/" + str(self.group), "AbortHelp")
+        self.mqtt_client.publish("ttm4115/" + str(self.group), str(self.task) +  ",abortHelp")
         self.app.removeAllWidgets()
         self.app.addLabel("title", f"What task do you need help with? (Group {self.group})")
         for i in range(1, 11):
@@ -99,7 +111,6 @@ class MQTT_Client:
     
     def on_message(self, client, userdata, msg):
         print("on_message(): topic: {}".format(msg.topic))
-        #self.client.publish("ttm4115/group" + str(self.group), msg.payload)
         print(userdata);
 
 
