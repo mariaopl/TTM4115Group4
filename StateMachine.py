@@ -15,8 +15,6 @@ class Help:
         self.app.setFont(18)
         self.app.addLabel("group_label", "Enter your group number:")
         self.app.addEntry("group_entry")
-        self.app.addLabel("unit_label", "Enter the unit number:")
-        self.app.addEntry("unit_entry")
         self.app.addButton("Submit", self.on_submit)
 
         def terminate():
@@ -30,18 +28,15 @@ class Help:
 
     def on_submit(self):
         self.group = self.app.getEntry("group_entry")
-        self.lab = self.app.getEntry("unit_entry")
         self.app.removeLabel("group_label")
         self.app.removeEntry("group_entry")
-        self.app.removeLabel("unit_label")
-        self.app.removeEntry("unit_entry")
         self.app.removeButton("Submit")
 
         self.app.addLabel("title", f"What task do you need help with? (Group {self.group})")
 
         for i in range(1, 11):
             self.app.addButton('Task ' + str(i), self.on_task_button)
-        self.app.addButton("Task", self.on_task_button)
+        self.app.addButton("Other", self.on_task_button)
     
     def on_task_button(self, msg):
         self.stm.send('Task')
@@ -50,19 +45,22 @@ class Help:
         self.app.addLabel("title", "You are now in queue for " + str(msg).lower())
         self.app.addButton("Help group", self.on_help_group)
         self.app.addButton("Abort help", self.on_abort_help)
-        self.mqtt_client.publish("ttm4115/group" + str(self.group), str(msg).lower())
+        if(str(msg).lower().__contains__("task")):
+            self.mqtt_client.publish("ttm4115/" + str(self.group), str(msg).lower().replace("task ", "") + ",needHelp")
+        else:
+            self.mqtt_client.publish("ttm4115/" + str(self.group), "0,needHelp")
     
 
     def on_help_group(self):
         self.stm.send('Need help')
-        self.mqtt_client.publish("ttm4115/group" + str(self.group), "group " + str(self.group) + " gets help")
+        self.mqtt_client.publish("ttm4115/" + str(self.group), "getsHelp")
         self.app.removeAllWidgets()
         self.app.addButton("Group helped", self.on_group_helped)
 
     def on_group_helped(self):
         print("Helped group " + self.group)
         self.stm.send('Gets help')
-        self.mqtt_client.publish("ttm4115/group" + str(self.group), "group " + str(self.group) + " helped")
+        self.mqtt_client.publish("ttm4115/" + str(self.group), "groupHelped")
         self.app.removeAllWidgets()
         self.app.addLabel("title", f"What task do you need help with? (Group {self.group})")
         for i in range(1, 11):
@@ -71,11 +69,12 @@ class Help:
     def on_abort_help(self, msg):
         print("Group " + self.group + " don't need help anymore")
         self.stm.send('Abort help')
-        self.mqtt_client.publish("ttm4115/", "Group " + str(self.group ) + " aborts help")
+        self.mqtt_client.publish("ttm4115/" + str(self.group), "AbortHelp")
         self.app.removeAllWidgets()
         self.app.addLabel("title", f"What task do you need help with? (Group {self.group})")
         for i in range(1, 11):
             self.app.addButton('Task ' + str(i), self.on_task_button)
+        self.app.addButton("Other", self.on_task_button)
 
 
     def enter_queue(self):
@@ -100,7 +99,7 @@ class MQTT_Client:
     def on_message(self, client, userdata, msg):
         print("on_message(): topic: {}".format(msg.topic))
         #self.client.publish("ttm4115/group" + str(self.group), msg.payload)
-        print(userdata)
+        print(userdata);
 
 
     def start(self, broker, port):
@@ -120,7 +119,7 @@ class MQTT_Client:
     
 
 
-host = "mqtt20.iik.ntnu.no"
+host = "10.24.27.124"
 
 help = Help(host)
 
