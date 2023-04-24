@@ -65,6 +65,7 @@ class Help:
         self.app.addLabel("title", f"What task do you need help with? (Group {self.group})")
         for i in range(1, 11):
             self.app.addButton('Task ' + str(i), self.on_task_button)
+        self.app.addButton("Other", self.on_task_button)
     
     def on_abort_help(self, msg):
         print("Group " + self.group + " don't need help anymore")
