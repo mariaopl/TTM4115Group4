@@ -48,13 +48,14 @@ class Help:
             self.task = 0
         else:
             self.task = str(msg).lower().replace("task ", "")
+        self.mqtt_client.publish("ttm4115/" + str(self.group), str(self.task) + ",question")
         if (self.queue[0] == self.group):
             self.app.setBg("green")
         elif (self.queue[1] == self.group):
             self.app.setBg("yellow")
         else:
             self.app.setBg("red")
-        self.mqtt_client.publish("ttm4115/" + str(self.group), self.task + ",question")
+        
     
 
     def on_help_group(self):
@@ -106,14 +107,11 @@ class MQTT_Client:
     
     def on_message(self, client, userdata, msg):
         print("on_message(): topic: {}".format(msg.topic))
-        print(userdata);
 
 
     def start(self, broker, port):
-
         print("Connecting to {}:{}".format(broker, port))
         self.client.connect(broker, port)
-
         self.client.subscribe("ttm4115")
 
         try:
