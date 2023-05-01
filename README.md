@@ -45,5 +45,3 @@ Set up mqtt proxy and student interface:
 Run mqtt proxy by running the file mqtt-proxy.py
 
 Run student interface by running the file StateMachine.py
-
-
