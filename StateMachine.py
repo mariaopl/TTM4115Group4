@@ -49,12 +49,7 @@ class Help:
         else:
             self.task = str(msg).lower().replace("task ", "")
         self.mqtt_client.publish("ttm4115/" + str(self.group), str(self.task) + ",question")
-        if (self.queue[0] == self.group):
-            self.app.setBg("green")
-        elif (self.queue[1] == self.group):
-            self.app.setBg("yellow")
-        else:
-            self.app.setBg("red")
+      
         
     
 
@@ -124,7 +119,7 @@ class MQTT_Client:
     
 
 
-host = "10.24.27.124"
+host = "172.31.214.230"
 
 help = Help(host)
 

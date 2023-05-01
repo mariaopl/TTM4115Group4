@@ -2,7 +2,7 @@ import paho.mqtt.client as mqtt
 import requests
 
 TOKEN = "643d0b49827f2746222ce912.ecda82a87eab4748ce96a7b0b35f71c2fac21506b711223d"
-mqttBroker = "10.24.27.124"
+mqttBroker = "172.31.214.230"
 port = 1883
 
  
